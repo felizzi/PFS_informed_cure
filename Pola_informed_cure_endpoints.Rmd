@@ -27,19 +27,26 @@ censor_transpl_fl <- FALSE
 ```
 
 The event dataset can be loaded from external sources. 
-
+```{event load, include=FALSE}
+data_cut_m <- "2019 March"
+censor_transpl_fl <- FALSE
+```
 The portion of code below invokes the \textit{hazard_time} function, that builds background hazard rates for each subject. Such background hazard rates depend on:
 Gender
 Age
 Country
 Year of trial start
 
-```{r datacuts, include=FALSE}
+```{r datacuts1, include=FALSE}
+event <- read.csv("libraries/event_git.csv")
+
 event$YEAR <- 2016
 event$COUNTRY <- "USA"
+source("haz_countries.R")
 haz_res_os <- hazard_time(table_ = as.data.frame(event), evttme = "AVAL", sex = "SEX" , age = "AGE", year = "YEAR", country_trial =  "COUNTRY", country_output = NULL)
 
 
+models <- c("exp",       "weibullPH", "lnorm",     "gengamma", "llogis",  "gompertz" )
 
 Nfr <- length(models)
 event <- as.data.frame(event)
@@ -73,7 +80,6 @@ models <- c("exp",       "weibullPH", "lnorm",     "gengamma", "llogis",  "gompe
 event$rate_mod <- haz_res_os$rate_vec
 
 
-event <- event %>% dplyr::mutate(ARMCDN = ifelse(ARMCD == "RAN DL BR",1,2))
 event <- as.data.frame(event)
 ##### likelihood function 
 ll.mix_f <- function(table_, parms, pi_, time_col, cen_col, rate_col, obj){  
@@ -336,39 +342,9 @@ for (i in 1:(length(models) )){
   ## a PLOOAAAT 
   ################################
   
-  sf_pola1 <- survfit(Surv(as.numeric(AVAL)/12, CNSR)~1, data = subset(event, ARMCD == "RAN DL BR"))
-  sf_pola2 <- survfit(Surv(as.numeric(AVAL)/12, CNSR)~1, data = subset(event, ARMCD == "RAN DL BR+POV"))
-  if (censor_transpl_fl){
-    pdf(paste0("reports/Plot_informed_",end_point,"_from_",end_point_info,"_",models[i],"_ad_hoc_cens_",data_cut, ".pdf"))
-  }else{ 
-    pdf(paste0("reports/Plot_informed_",end_point,"_from_",end_point_info,"_",models[i],"_",data_cut, ".pdf"))
-  }
-  plot(sf_pola2, lwd = 4, col = "blue", conf.int = F, xaxis = "years", xlim = c(0,7), xlab = "Time (years)", ylab = "Survival", cex.axis  =1.2, cex.lab = 1.3, main = paste0("Distribution = ", models[i]))
-  lines(xty, S_1, col = 'red', lwd = 5, lty = 3)
-  lines(xty, S_2, col = 'blue', lwd = 5, lty = 3)
-    lines(sf_pola1, col = "red", lwd= 4, conf.int = F)
-  legend("topright", c("POLA TRIAL -- BR + POLA", "POLA + BR cure","POLA TRIAL -- BR ", "BR cure","Romulus"), col = c("blue","blue","red","red", "purple"), lwd = c(5,5,5,5,5), lty = c(1,3,1,3,1))
-  text(6,pi_v[1], paste0(100*signif(pi_v[1],3),"%"), cex = 1)
-  text(6,pi_v[2], paste0(100*signif(pi_v[2],3),"%"), cex = 1)
-  dev.off()
+
   
-}
 
 
-## output the informed uncertainties
-if (censor_transpl_fl){
-  write.csv(parms_fit_frame_1, file = paste0("reports/Parms_mixed_informed_",end_point,"_from_",end_point_info, "_uncertainty_control_ad_hoc_cens_", data_cut,".csv"), sep = "")
-  write.csv(parms_fit_frame_2, file = paste0("reports/Parms_mixed_informed_",end_point,"_from_",end_point_info, "_uncertainty_intervention_ad_hoc_cens_", data_cut,".csv"), sep = "")
 
-  write.csv(rbind(out_frame_control, out_frame_intervention), file = paste0("reports/Parms_mixed_informed_HE_friendly_", end_point,"_from_", end_point_info,"_uncertainty_ad_hoc_cens_",data_cut,".csv"))
-  write.csv(rbind(cov_frame_control, cov_frame_intervention), file = paste0("reports/Variance_mixed_informed_HE_friendly_", end_point,"_from_", end_point_info,"_uncertainty_ad_hoc_cens_",data_cut,".csv"))
-  write.csv(d_frame, file = paste0("reports/Surv_times_",end_point,"_from_", end_point_info,"_intervention_and_control_ad_hoc_cens_",data_cut,".csv"), sep = "")
-}else{
-  write.csv(parms_fit_frame_1, file = paste0("reports/Parms_mixed_informed_",end_point,"_from_",end_point_info, "_uncertainty_control_", data_cut,".csv"), sep = "")
-  write.csv(parms_fit_frame_2, file = paste0("reports/Parms_mixed_informed_",end_point,"_from_",end_point_info, "_uncertainty_intervention_", data_cut,".csv"), sep = "")
-  
-  write.csv(rbind(out_frame_control, out_frame_intervention), file = paste0("reports/Parms_mixed_informed_HE_friendly_", end_point,"_from_", end_point_info,"_uncertainty_",data_cut,".csv"))
-  write.csv(rbind(cov_frame_control, cov_frame_intervention), file = paste0("reports/Variance_mixed_informed_HE_friendly_", end_point,"_from_", end_point_info,"_uncertainty_",data_cut,".csv"))
-  write.csv(d_frame, file = paste0("reports/Surv_times_",end_point,"_from_", end_point_info,"_intervention_and_control_",data_cut,".csv"), sep = "")
-  
 }
