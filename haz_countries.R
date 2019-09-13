@@ -53,7 +53,7 @@ hazard_time <- function(table_, evttme, sex, age, year, country_trial, country_o
     year_in_use   <- table_[i, year]
     gender_in_use <- table_[i,sex]
 
-    ## load the tables 
+    ## load the tables, separately
     if (gender_in_use == "MALE" | gender_in_use == "M"){
       table_in_use <- read.csv(paste0("libraries/",country_map[[country_in_use]],"/Male/Mortality.csv", sep = ""))
       max_year <- max(table_in_use$Year) ## selection of the max year in case the year in the trial is missing
