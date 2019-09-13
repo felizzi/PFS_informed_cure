@@ -127,7 +127,9 @@ for (i in 1:(length(models) )){
   var_vals <- mat_in_use[,4:(4+length(mat_in_use$Param_Name) - 1)]
   parms_corr_1 <- matrix(,nrow = 323, ncol = length(mean_vals) )
   parms_corr_2 <- matrix(,nrow = 323, ncol = length(mean_vals) )
-  #determine svd of var_vals. Set the stuff to 0 if the matrix 
+  # The code below changes the maximum and minimum eigenvalues if required. This is done to prevent
+  # 1. The Variance-Covariance matrix yield very large variations in the parameters
+  # 2. The Varianace-Covariance matrix may not be positive definite
   sing_dec <- svd(var_vals)
   
   if (min(sing_dec$d) < 1000*.Machine$double.eps){
@@ -184,12 +186,12 @@ for (i in 1:(length(models) )){
     ## calculate there the values of the input function for each arm separately 
     b_use <- as.numeric(out_input_endp %>% dplyr::filter(Function == models[i]))[3:4]
     logit_arg <- b_use%*%rbind(c(1,1),c(0,1)) 
-    pi_v <- exp(logit_arg)/(1 + exp(logit_arg))
+    pi_v <- exp(logit_arg)/(1 + exp(logit_arg)) ## calculation of cure values via a log-logistic link 
     
-    #print(paste0(" Cure values ",pi_v))
-    opt_obj_1 <- try(optim(par=c(fsr_use_1[1:(length(fsr_use_1)) ]), #dummy staring parameter for the intercept and coefficient of the cure fraction  
+
+    opt_obj_1 <- try(optim(par=c(fsr_use_1[1:(length(fsr_use_1)) ]), 
                            ll.mix_f,
-                           pi_ = v_cure_1[nt],
+                           pi_ = v_cure_1[nt], ## cure input for the control arm determined by the random set of cure values
                            table_ = subset(event, ARMCDN == 1),
                            time_col = "AVAL",
                            cen_col = "CNSR",
@@ -204,7 +206,7 @@ for (i in 1:(length(models) )){
     
     opt_obj_2 <- try(optim(par=c(.1*fsr_use_2[1:(length(fsr_use_2)) ]), #dummy staring parameter for the intercept and coefficient of the cure fraction  
                            ll.mix_f,
-                           pi_ = v_cure_2[nt],
+                           pi_ = v_cure_2[nt], ## cure input for the intervention arm determined by the random set of cure values
                            table_ = subset(event, ARMCDN == 2),
                            time_col = "AVAL",
                            cen_col = "CNSR",
@@ -292,7 +294,7 @@ for (i in 1:(length(models) )){
   l_mat <- length(mean_vals)
   for ( irow in 1:l_mat){
     for ( icol in 1:l_mat){
-      cov_frame_intervention$STUDY.NAME[j0] <- "GO293650"
+      cov_frame_intervention$STUDY.NAME[j0] <- "GO29365"
       cov_frame_intervention$POPULATION[j0] <- "ITT"
       cov_frame_intervention$TREATMENT.ARM[j0] <- "Intervention"
       cov_frame_intervention$Distribution[j0] <- models[i]
