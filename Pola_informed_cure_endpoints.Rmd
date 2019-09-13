@@ -37,14 +37,18 @@ Age
 Country
 Year of trial start
 
-```{r datacuts1, include=FALSE}
+```{r datacuts1}
+knitr::opts_knit$set(root.dir = getwd())
 event <- read.csv("libraries/event_git.csv")
 
 event$YEAR <- 2016
 event$COUNTRY <- "USA"
-source("haz_countries.R")
+source("haz_countries.R") ## this file is soureced and will be commented separately 
 haz_res_os <- hazard_time(table_ = as.data.frame(event), evttme = "AVAL", sex = "SEX" , age = "AGE", year = "YEAR", country_trial =  "COUNTRY", country_output = NULL)
+```
 
+
+```{r dataframe_def1}
 
 models <- c("exp",       "weibullPH", "lnorm",     "gengamma", "llogis",  "gompertz" )
 
@@ -77,11 +81,14 @@ cov_frame_control <- cov_frame_intervention
 #standars order preferred by Thuresson 
 models <- c("exp",       "weibullPH", "lnorm",     "gengamma", "llogis",  "gompertz" )
 
-event$rate_mod <- haz_res_os$rate_vec
+event$rate_mod <- haz_res_os$rate_vec ## this line adds the the background hazard rates to the main dataframe to  be used 
 
 
 event <- as.data.frame(event)
+
+###########################
 ##### likelihood function 
+############################
 ll.mix_f <- function(table_, parms, pi_, time_col, cen_col, rate_col, obj){  
   time_v <- as.numeric(table_[,time_col])/12;
   cen_v <- as.numeric(table_[,cen_col]);
